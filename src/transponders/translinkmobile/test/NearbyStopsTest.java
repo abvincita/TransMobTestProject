@@ -1,6 +1,7 @@
 package transponders.translinkmobile.test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -10,19 +11,22 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.test.ActivityInstrumentationTestCase2;
+import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.view.KeyEvent;
 
-<<<<<<< HEAD
+
 import transponders.translinkmobile.DisplayRoutesFragment;
-=======
+
 import transponders.translinkmobile.JourneyPlanner;
 import transponders.translinkmobile.MaintenanceNewsFragment;
->>>>>>> 78f215c8aaa7f9e7c6612e5fee72e131658b5c91
+
 import transponders.translinkmobile.NearbyStops;
 import transponders.translinkmobile.R;
 import transponders.translinkmobile.Route;
+import transponders.translinkmobile.RouteDataLoader;
 import transponders.translinkmobile.Stop;
 import transponders.translinkmobile.StopDataLoader;
 
@@ -226,7 +230,33 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		boolean found203 = false;
 		boolean found204 = false;
 		boolean found379 = false;
-		
+		DisplayRoutesFragment displayRouteFragment = (DisplayRoutesFragment) activity.getContentFragment();
+		while (displayRouteFragment == null) {
+			;
+		}
+		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
+		RouteDataLoader routeDataLoader = displayRouteFragment.getRouteDataLoader();
+		List<String> lines = displayRouteFragment.getLines();
+		while(routeDataLoader.isLoading()) {
+			;
+		}
+		Log.d("Test", lines.get(0));
+		for(String str: lines) {
+			if (str.contains("203")) {
+				found203=true;
+			} else if (str.contains("204")) {
+				found204=true;
+			} else if (str.contains("379")) {
+				found379=true;
+			}
+		}
+		if (!found203 || !found204 || !found379) {
+			fail("Could not find all required routes in the DisplayRoutesFragment");
+		}
+		int adapterSize = adapter.getCount();
+		for (int i=0; i<adapterSize; i++) {
+			assertEquals(lines.get(i), adapter.getItem(i));
+		}
 		
 	}
 }
