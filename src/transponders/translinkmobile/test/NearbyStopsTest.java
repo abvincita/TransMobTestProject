@@ -1,5 +1,7 @@
 package transponders.translinkmobile.test;
 
+import java.util.ArrayList;
+
 import android.app.ActionBar;
 import android.test.ActivityInstrumentationTestCase2;
 import android.widget.ListAdapter;
@@ -7,6 +9,8 @@ import android.widget.ListView;
 import android.view.KeyEvent;
 
 import transponders.translinkmobile.NearbyStops;
+import transponders.translinkmobile.Stop;
+import transponders.translinkmobile.StopDataLoader;
 
 public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStops> {
 
@@ -18,6 +22,8 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	public static final int ADAPTER_COUNT = 3;
 	public static final int INITIAL_POSITION = 0;
 	public static final int TEST_POSITION = 3;
+	
+	private StopDataLoader stopDataLoader;
 	
 	
 	public NearbyStopsTest()
@@ -36,6 +42,8 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		menuList = (ListView) activity.findViewById(transponders.translinkmobile.R.id.left_drawer_ns);
 	
 		menuAdapter = menuList.getAdapter();
+		
+		stopDataLoader = activity.getStopDataLoader();
 	} 
 	
 	public void testPreConditions() 
@@ -75,5 +83,33 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	    	resultTitle = "Nearby Stops";
 	    
 	    assertEquals(resultTitle, selectedString);
+	}
+	
+	public void testStopDataLoader() {
+				
+		//Test for the bus stop PA Hospital station near -27.4967, 153.03418,  
+		stopDataLoader.requestStopsNear(-27.4967, 153.03418, 1000);
+		while (stopDataLoader.isLoading()) {
+			;
+		}
+		ArrayList<Stop> stops = stopDataLoader.getStopsNear();
+		boolean foundMatch = false;
+		assertNotNull(stops);
+		for (Stop s: stops) {
+			if (s.getDescription().contains("PA Hospital station")) {
+				foundMatch = true;
+				break;
+			} else if (s.getDescription().contains("Fake station. Let's burn together!")) {
+				fail();
+				break;
+			}
+		}
+		if (!foundMatch) {
+			fail();
+		}
+		
+		//Test that the stops around UQ Lakes have the parent "UQ Lakes"
+		stopDataLoader.requestStopsNear(-27.498037,153.017823, 1000);
+		
 	}
 }
