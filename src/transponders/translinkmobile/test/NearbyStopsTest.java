@@ -4,8 +4,9 @@ import android.app.ActionBar;
 import android.test.ActivityInstrumentationTestCase2;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import transponders.translinkmobile.NearbyStops;
 import android.view.KeyEvent;
+
+import transponders.translinkmobile.NearbyStops;
 
 public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStops> {
 
