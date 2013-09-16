@@ -8,20 +8,26 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.view.KeyEvent;
 
+import transponders.translinkmobile.JourneyPlanner;
+import transponders.translinkmobile.MaintenanceNewsFragment;
 import transponders.translinkmobile.NearbyStops;
 import transponders.translinkmobile.Stop;
 import transponders.translinkmobile.StopDataLoader;
 
 public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStops> {
 
+	public static final int ADAPTER_COUNT = 3;
+	public static final int INITIAL_POSITION = 0;
+	public static final int TEST_POSITION = 3;
+	
 	private NearbyStops activity;
+	private JourneyPlanner jpFragment;
+	private MaintenanceNewsFragment mnFragment;
+	
 	private ListView menuList;
 	private ListAdapter menuAdapter;
 	private String selectedString;
 	private int mPos;
-	public static final int ADAPTER_COUNT = 3;
-	public static final int INITIAL_POSITION = 0;
-	public static final int TEST_POSITION = 3;
 	
 	private StopDataLoader stopDataLoader;
 	
@@ -83,6 +89,17 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	    	resultTitle = "Nearby Stops";
 	    
 	    assertEquals(resultTitle, selectedString);
+	    
+	    if(mPos == 1)
+	    {
+	    	jpFragment = activity.getJourneyPlannerFragment();
+	    	assertNotNull(jpFragment);
+	    }  
+	    if(mPos == 2)
+	    {
+	    	mnFragment = activity.getMaintenanceNewsFragment();
+	    	assertNotNull(mnFragment);
+	    }  
 	}
 	
 	public void testStopDataLoader() {
