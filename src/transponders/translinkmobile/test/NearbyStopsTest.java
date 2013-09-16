@@ -29,6 +29,7 @@ import transponders.translinkmobile.NearbyStops;
 import transponders.translinkmobile.R;
 import transponders.translinkmobile.Route;
 import transponders.translinkmobile.RouteDataLoader;
+import transponders.translinkmobile.RouteStopsLoader;
 import transponders.translinkmobile.Stop;
 import transponders.translinkmobile.StopDataLoader;
 
@@ -48,6 +49,7 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	private int mPos;
 	
 	private StopDataLoader stopDataLoader;
+	private RouteStopsLoader routeStopsLoader;
 	
 	
 	public NearbyStopsTest()
@@ -68,6 +70,7 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		menuAdapter = menuList.getAdapter();
 		
 		stopDataLoader = activity.getStopDataLoader();
+		routeStopsLoader = activity.getRouteStopsLoader();
 	} 
 	
 	public void testPreConditions() 
@@ -273,7 +276,22 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		
 	}
 	
-	/*public void testRouteStopsLoader() {
+	public void testRouteStopsLoader() {
+		Route route = new Route("209","Random Name", 2);
+		CountDownLatch lock = new CountDownLatch(1);
+		routeStopsLoader.setCompletedAsyncTasksLatch(lock);
+		routeStopsLoader.requestRouteStops(route);
+		try {
+			lock.await(40000, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			fail("Request route stops was interrupted");
+			return;
+		}
+		ArrayList<Stop> stops = routeStopsLoader.getStops();
+		assertEquals(11, stops.size());
 		
-	}*/
+		
+		
+	}
 }
