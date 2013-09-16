@@ -1,15 +1,14 @@
 package transponders.translinkmobile.test;
 
-import com.google.android.gms.maps.GoogleMap;
 
+
+import transponders.translinkmobile.Stop;
 import junit.framework.TestCase;
-import transponders.translinkmobile.NearbyStops;
-import transponders.translinkmobile.StopDataLoader;
-import android.test.ActivityInstrumentationTestCase2;
+
 
 public class StopDataLoaderTest extends TestCase {
 
-	public StopDataLoaderTest(Class<StopDataLoader> activityClass) {
+	public StopDataLoaderTest(Class<Stop> activityClass) {
 		super();
 		runTests();
 	}

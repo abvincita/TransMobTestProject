@@ -2,13 +2,22 @@ package transponders.translinkmobile.test;
 
 import java.util.ArrayList;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+
 import android.app.ActionBar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.test.ActivityInstrumentationTestCase2;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.view.KeyEvent;
 
+import transponders.translinkmobile.DisplayRoutesFragment;
 import transponders.translinkmobile.NearbyStops;
+import transponders.translinkmobile.R;
+import transponders.translinkmobile.Route;
 import transponders.translinkmobile.Stop;
 import transponders.translinkmobile.StopDataLoader;
 
@@ -87,29 +96,117 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	
 	public void testStopDataLoader() {
 				
-		//Test for the bus stop PA Hospital station near -27.4967, 153.03418,  
+		//Test for the bus stop PA Hospital station, platform 2 near -27.4967, 153.03418,  
 		stopDataLoader.requestStopsNear(-27.4967, 153.03418, 1000);
 		while (stopDataLoader.isLoading()) {
 			;
 		}
 		ArrayList<Stop> stops = stopDataLoader.getStopsNear();
-		boolean foundMatch = false;
+		Stop matchedStop=null;
 		assertNotNull(stops);
 		for (Stop s: stops) {
-			if (s.getDescription().contains("PA Hospital station")) {
-				foundMatch = true;
+			if (s.getDescription().contains("PA Hospital station, platform 2")) {
+				assertEquals(s.getParentId(), "LM:Busway stations:PA Hospital station");
+				matchedStop = s;
 				break;
 			} else if (s.getDescription().contains("Fake station. Let's burn together!")) {
-				fail();
+				fail("This fail() cannot be reached, ever.");
 				break;
 			}
 		}
-		if (!foundMatch) {
-			fail();
+		if (matchedStop == null) {
+			fail("Could not find stop matching the given stop name");
+		} else {
+			assertEquals(matchedStop.getParentId(), "LM:Busway stations:PA Hospital station");
+			ArrayList<Route> routes = matchedStop.getRoutes();
+			assertNotNull(routes);
+			boolean foundRoute105 = false;
+			for (Route r: routes) {
+				if (r.getCode().equals("105")) {
+					foundRoute105 = true;
+					assertEquals(r.getDescription(), "City, Boggo Rd, Fairfield, Yeronga, Tennyson, Indooroopilly");
+					assertEquals(r.getType(), 2);
+					break;
+				}
+			}
+			if (!foundRoute105) {
+				fail("Couldn't find route 105");
+			}
+			ArrayList<Stop> groupedStops = stopDataLoader.getStopsFromParent(matchedStop);
+			//find the platform 1 stop
+			boolean foundPlatform1 = false;
+			for (Stop s: groupedStops) {
+				if (s.getDescription().equals("PA Hospital station, platform 1")) {
+					foundPlatform1 = true;
+					break;
+				}
+			}
+			if (!foundPlatform1) {
+				fail("Couldnot find platform1");
+			}
+			final Stop finalMatchedStop = matchedStop;
+			activity.runOnUiThread(
+					new Runnable() {
+						public void run() {
+		        	stopDataLoader.addSavedStopMarkersToMap(true);
+						}
+					}
+					);
+			//Check there is a Marker matching saved stop
+			/*ArrayList<Marker> stopMarkers = activity.getStopMarkers();
+			assertNotNull(stopMarkers);
+			
+			boolean foundMatchingMarker = false;
+			
+			for (final Marker m: stopMarkers) {
+				activity.runOnUiThread(
+					      new Runnable() {
+					        public void run() {
+					        	final double lat = m.getPosition().latitude;
+					        }
+					      }
+					      );
+				
+					        	
+				if (lat == finalMatchedStop.getParentPosition().latitude &&
+						m.getPosition().longitude == finalMatchedStop.getParentPosition().longitude) {
+					foundMatchingMarker = true;
+				}
+			}
+			if (!foundMatchingMarker) {
+				fail("Could not locate matching marker");
+			}
+						/*}
+					}
+					);*/
+			
 		}
 		
-		//Test that the stops around UQ Lakes have the parent "UQ Lakes"
-		stopDataLoader.requestStopsNear(-27.498037,153.017823, 1000);
+		
+	}
+	
+	public void testDisplayRoutesFragment() {
+		Stop stop1 = new Stop("SI:002459","stop1 description", "2", new LatLng(0,0));
+		Stop stop2 = new Stop("SI:000429","stop2 description", "2", new LatLng(0,0));
+		ArrayList<Stop> savedStops = new ArrayList<Stop>();
+		savedStops.add(stop1);
+		savedStops.add(stop2);
+		activity.setSelectedStops(savedStops);
+		
+		//force swap the fragment to display routes
+		activity.runOnUiThread(
+	      new Runnable() {
+	        public void run() {
+	        	activity.openTimetableFragment();
+	        }
+	      }
+	     );
+		
+		
+		boolean found203 = false;
+		boolean found204 = false;
+		boolean found379 = false;
+		
 		
 	}
 }
