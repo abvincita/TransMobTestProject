@@ -2,6 +2,8 @@ package transponders.translinkmobile.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -130,26 +132,23 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		assertNotNull(stops);
 		for (Stop s: stops) {
 			if (s.getDescription().contains("PA Hospital station, platform 2")) {
-				assertEquals(s.getParentId(), "LM:Busway stations:PA Hospital station");
+				assertEquals("LM:Busway stations:PA Hospital station", s.getParentId());
 				matchedStop = s;
-				break;
-			} else if (s.getDescription().contains("Fake station. Let's burn together!")) {
-				fail("This fail() cannot be reached, ever.");
 				break;
 			}
 		}
 		if (matchedStop == null) {
 			fail("Could not find stop matching the given stop name");
 		} else {
-			assertEquals(matchedStop.getParentId(), "LM:Busway stations:PA Hospital station");
+			assertEquals("LM:Busway stations:PA Hospital station", matchedStop.getParentId());
 			ArrayList<Route> routes = matchedStop.getRoutes();
 			assertNotNull(routes);
 			boolean foundRoute105 = false;
 			for (Route r: routes) {
 				if (r.getCode().equals("105")) {
 					foundRoute105 = true;
-					assertEquals(r.getDescription(), "City, Boggo Rd, Fairfield, Yeronga, Tennyson, Indooroopilly");
-					assertEquals(r.getType(), 2);
+					assertEquals("City, Boggo Rd, Fairfield, Yeronga, Tennyson, Indooroopilly", r.getDescription());
+					assertEquals(2, r.getType());
 					break;
 				}
 			}
@@ -209,9 +208,12 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		
 	}
 	
-	public void testDisplayRoutesFragment() {
-		Stop stop1 = new Stop("SI:002459","stop1 description", "2", new LatLng(0,0));
-		Stop stop2 = new Stop("SI:000429","stop2 description", "2", new LatLng(0,0));
+	public void testDisplayRoutesFragment() throws InterruptedException {
+		Stop stop1 = new Stop("002459","stop1 description", "2", new LatLng(0,0));
+		stop1.addRoute(new Route("203","testroute",2));
+		stop1.addRoute(new Route("204","testroute",2));
+		Stop stop2 = new Stop("000429","stop2 description", "2", new LatLng(0,0));
+		stop2.addRoute(new Route("379","testroute",2));
 		ArrayList<Stop> savedStops = new ArrayList<Stop>();
 		savedStops.add(stop1);
 		savedStops.add(stop2);
@@ -230,17 +232,28 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		boolean found203 = false;
 		boolean found204 = false;
 		boolean found379 = false;
+		CountDownLatch lock = new CountDownLatch(1);
+		
 		DisplayRoutesFragment displayRouteFragment = (DisplayRoutesFragment) activity.getContentFragment();
+		int count =0;
 		while (displayRouteFragment == null) {
-			;
+			displayRouteFragment = (DisplayRoutesFragment) activity.getContentFragment();
+			Log.d("TestCase", "fragment null");
+			if (++count == 500) {
+				fail("Activity content frame remained null");
+			}
 		}
 		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
 		RouteDataLoader routeDataLoader = displayRouteFragment.getRouteDataLoader();
 		List<String> lines = displayRouteFragment.getLines();
-		while(routeDataLoader.isLoading()) {
+		routeDataLoader.setCompletedAsyncTasksLatch(lock);
+		lock.await(40000, TimeUnit.MILLISECONDS);
+		/*while(routeDataLoader.isLoading()) {
 			;
-		}
-		Log.d("Test", lines.get(0));
+		}*/
+		
+		
+		assertEquals(3, lines.size());
 		for(String str: lines) {
 			if (str.contains("203")) {
 				found203=true;
@@ -259,4 +272,8 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		}
 		
 	}
+	
+	/*public void testRouteStopsLoader() {
+		
+	}*/
 }
