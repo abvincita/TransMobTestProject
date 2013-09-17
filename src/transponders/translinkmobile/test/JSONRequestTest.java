@@ -33,7 +33,7 @@ public class JSONRequestTest extends TestCase {
 		JSONRequest request = new JSONRequest();
 		TestNetworkListener listener = new TestNetworkListener();
 		request.setListener(listener);
-		request.execute("http://deco3801-010.uqcloud.net/jsontest.php");
+		request.execute("http://deco3801-010.uqcloud.net/jsonrequesttest.php");
 		try {
 			lock.await(30000, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e) {

@@ -291,6 +291,13 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		ArrayList<Stop> stops = routeStopsLoader.getStops();
 		assertEquals(11, stops.size());
 		
+		//test the polyline
+		lock = new CountDownLatch(1);
+		/*LatLng point1 = new LatLng(41.69957665997156, -87.68943786621094);
+		LatLng point2 = new LatLng(41.72315557551985, -87.56103515625);
+		LatLng point3 = new LatLng(41.6226288146378, -87.57545471191406);
+		String encodedPolyline = "kmo}F~yevOkrCoaXhsR`yA";
+		routeStopsLoader.addLineToMap(encodedPolyline);*/
 		
 		
 	}
