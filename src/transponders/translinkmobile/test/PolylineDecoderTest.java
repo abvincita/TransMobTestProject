@@ -18,17 +18,19 @@ public class PolylineDecoderTest extends TestCase {
 		
 	}
 	public void testPolylineDecoder() {
-		LatLng point1 = new LatLng(41.69957665997156, -87.68943786621094);
+		/*LatLng point1 = new LatLng(41.69957665997156, -87.68943786621094);
 		LatLng point2 = new LatLng(41.72315557551985, -87.56103515625);
-		LatLng point3 = new LatLng(41.6226288146378, -87.57545471191406);
+		LatLng point3 = new LatLng(41.6226288146378, -87.57545471191406);*/
+		LatLng point1 = new LatLng(41.6996, -87.6894);
+		LatLng point2 = new LatLng(41.7232, -87.5610);
+		LatLng point3 = new LatLng(41.6226, -87.5754);
 		String encodedPolyline = "kmo}F~yevOkrCoaXhsR`yA";
 		List<LatLng> list = PolylineDecoder.decodePoly(encodedPolyline);
-		assertEquals(point1.latitude, list.get(0).latitude);
-		assertEquals(point1.longitude, list.get(0).longitude);
-		assertEquals(point2.latitude, list.get(1).latitude);
-		assertEquals(point2.longitude, list.get(1).longitude);
-		assertEquals(point3.latitude, list.get(2).latitude);
-		assertEquals(point3.longitude, list.get(2).longitude);
-		
+		assertEquals((double)Math.round(point1.latitude *10000)/10000, (double)Math.round(list.get(0).latitude * 10000)/10000);
+		assertEquals((double)Math.round(point1.longitude *10000)/10000, (double)Math.round(list.get(0).longitude * 10000)/10000);
+		assertEquals((double)Math.round(point2.latitude *10000)/10000, (double)Math.round(list.get(1).latitude * 10000)/10000);
+		assertEquals((double)Math.round(point2.longitude *10000)/10000, (double)Math.round(list.get(1).longitude * 10000)/10000);
+		assertEquals((double)Math.round(point3.latitude *10000)/10000, (double)Math.round(list.get(2).latitude * 10000)/10000);
+		assertEquals((double)Math.round(point3.longitude *10000)/10000, (double)Math.round(list.get(2).longitude * 10000)/10000);
 	}
 }

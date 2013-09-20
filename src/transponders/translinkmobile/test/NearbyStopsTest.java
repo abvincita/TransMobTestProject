@@ -2,12 +2,12 @@ package transponders.translinkmobile.test;
 
 import java.util.ArrayList;
 import java.util.List;
-<<<<<<< HEAD
+
 import java.util.concurrent.ExecutionException;
-=======
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
->>>>>>> c4962c80effec6945d1f08c65cd5b2151d101c1f
+
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -19,12 +19,12 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.test.ActivityInstrumentationTestCase2;
 import android.util.Log;
-<<<<<<< HEAD
+
 import android.widget.Button;
 import android.widget.EditText;
-=======
+
 import android.widget.ArrayAdapter;
->>>>>>> c4962c80effec6945d1f08c65cd5b2151d101c1f
+
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TableLayout;
@@ -33,7 +33,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.os.AsyncTask;
 
-<<<<<<< HEAD
 import transponders.translinkmobile.DisplayRoutesFragment;
 import transponders.translinkmobile.JSONRequest;
 import transponders.translinkmobile.JourneyPlanner;
@@ -43,7 +42,7 @@ import transponders.translinkmobile.NearbyStops;
 import transponders.translinkmobile.R;
 import transponders.translinkmobile.Route;
 import transponders.translinkmobile.ShowJourneyPage;
-=======
+
 
 import transponders.translinkmobile.DisplayRoutesFragment;
 
@@ -55,7 +54,7 @@ import transponders.translinkmobile.R;
 import transponders.translinkmobile.Route;
 import transponders.translinkmobile.RouteDataLoader;
 import transponders.translinkmobile.RouteStopsLoader;
->>>>>>> c4962c80effec6945d1f08c65cd5b2151d101c1f
+
 import transponders.translinkmobile.Stop;
 import transponders.translinkmobile.StopDataLoader;
 
@@ -111,12 +110,12 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		navigationDrawer = (DrawerLayout) fragmentActivity.findViewById(transponders.translinkmobile.R.id.drawer_layout_ns);
 		menuAdapter = menuList.getAdapter();
 		
-<<<<<<< HEAD
+
 		stopDataLoader = fragmentActivity.getStopDataLoader();
-=======
-		stopDataLoader = activity.getStopDataLoader();
-		routeStopsLoader = activity.getRouteStopsLoader();
->>>>>>> c4962c80effec6945d1f08c65cd5b2151d101c1f
+
+		stopDataLoader = fragmentActivity.getStopDataLoader();
+		routeStopsLoader = fragmentActivity.getRouteStopsLoader();
+
 	} 
 	
 	public void testPreConditions() 
@@ -161,7 +160,7 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	    {
 	    	jpFragment = fragmentActivity.getJourneyPlannerFragment();
 	    	assertNotNull(jpFragment);
-	    	//testJourneyPlannerResult(jpFragment);
+	    	testJourneyPlannerResult(jpFragment);
 	    }    
 	}
 	
@@ -265,18 +264,75 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		fragmentActivity.setSelectedStops(savedStops);
 		
 		//force swap the fragment to display routes
-		/*activity.runOnUiThread(
+		fragmentActivity.runOnUiThread(
 	      new Runnable() {
 	        public void run() {
-	        	activity.openTimetableFragment();
+	        	fragmentActivity.openTimetableFragment();
 	        }
 	      }
 	     );
 		
 		boolean found203 = false;
 		boolean found204 = false;
-<<<<<<< HEAD
-		boolean found379 = false;*/
+		boolean found379 = false;
+		CountDownLatch lock = new CountDownLatch(1);
+		CountDownLatch lock2 = new CountDownLatch(1);
+		
+		DisplayRoutesFragment displayRouteFragment = (DisplayRoutesFragment) fragmentActivity.getContentFragment();
+		int count =0;
+		while (displayRouteFragment == null) {
+			displayRouteFragment = (DisplayRoutesFragment) fragmentActivity.getContentFragment();
+			Log.d("TestCase", "fragment null");
+			if (++count == 50000) {
+				fail("Activity content frame remained null");
+			}
+		}
+		displayRouteFragment.setCompletedAsyncTasksLatch(lock);
+		/*
+		count = 0;
+		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
+		while (adapter == null) {
+			adapter = displayRouteFragment.getAdapter();
+			if (++count == 500) {
+				fail("Adapter remained null");
+			}
+		}
+		count = 0;
+		RouteDataLoader routeDataLoader = displayRouteFragment.getRouteDataLoader();
+		while (routeDataLoader == null) {
+			routeDataLoader = displayRouteFragment.getRouteDataLoader();
+			if (++count == 500) {
+				fail("routeDataLoaderS remained null");
+			}
+		}*/
+		lock.await(10000, TimeUnit.MILLISECONDS);
+		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
+		RouteDataLoader routeDataLoader = displayRouteFragment.getRouteDataLoader();
+		List<String> lines = displayRouteFragment.getLines();
+		
+		//routeDataLoader.setCompletedAsyncTasksLatch(lock2);
+		//lock2.await(30000, TimeUnit.MILLISECONDS);
+		/*while(routeDataLoader.isLoading()) {
+			;
+		}*/
+
+		assertEquals(3, lines.size());
+		for(String str: lines) {
+			if (str.contains("203")) {
+				found203=true;
+			} else if (str.contains("204")) {
+				found204=true;
+			} else if (str.contains("379")) {
+				found379=true;
+			}
+		}
+		if (!found203 || !found204 || !found379) {
+			fail("Could not find all required routes in the DisplayRoutesFragment");
+		}
+		int adapterSize = adapter.getCount();
+		for (int i=0; i<adapterSize; i++) {
+			assertEquals(lines.get(i), adapter.getItem(i));
+		}
 	}
 	
 	public void testJourneyPlannerResult(JourneyPlanner jpf) throws InterruptedException
@@ -370,50 +426,39 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	}
 	
 public void testMaintenanceNewsFromDrawerUI() throws InterruptedException {
-=======
-		boolean found379 = false;
-		CountDownLatch lock = new CountDownLatch(1);
+	
+	SelectMaintenanceNews myRunnable = new SelectMaintenanceNews();
+	
+    synchronized(myRunnable)
+    {
+    	fragmentActivity.runOnUiThread(myRunnable);
+    	myRunnable.wait(); 
+    }
+    
+    mPos = menuList.getSelectedItemPosition();
+    selectedString = (String) menuList.getItemAtPosition(mPos);
+    
+    ActionBar actionBar = (ActionBar) fragmentActivity.getActionBar();
+    resultTitle = (String) actionBar.getTitle();
+    
+    Log.d("MPOS", mPos + "");
+    Log.d("SELECTEDSTRING", selectedString);
+    Log.d("TITLE", resultTitle);
+    
+    assertEquals(resultTitle, selectedString);
+    	    
+    if(mPos == 2)
+    {
+    	mnFragment = fragmentActivity.getMaintenanceNewsFragment();
+    	assertNotNull(mnFragment);
+    	testMaintenanceNews(mnFragment);
+    }  
+
 		
-		DisplayRoutesFragment displayRouteFragment = (DisplayRoutesFragment) activity.getContentFragment();
-		int count =0;
-		while (displayRouteFragment == null) {
-			displayRouteFragment = (DisplayRoutesFragment) activity.getContentFragment();
-			Log.d("TestCase", "fragment null");
-			if (++count == 500) {
-				fail("Activity content frame remained null");
-			}
-		}
-		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
-		RouteDataLoader routeDataLoader = displayRouteFragment.getRouteDataLoader();
-		List<String> lines = displayRouteFragment.getLines();
-		routeDataLoader.setCompletedAsyncTasksLatch(lock);
-		lock.await(40000, TimeUnit.MILLISECONDS);
-		/*while(routeDataLoader.isLoading()) {
-			;
-		}*/
-		
-		
-		assertEquals(3, lines.size());
-		for(String str: lines) {
-			if (str.contains("203")) {
-				found203=true;
-			} else if (str.contains("204")) {
-				found204=true;
-			} else if (str.contains("379")) {
-				found379=true;
-			}
-		}
-		if (!found203 || !found204 || !found379) {
-			fail("Could not find all required routes in the DisplayRoutesFragment");
-		}
-		int adapterSize = adapter.getCount();
-		for (int i=0; i<adapterSize; i++) {
-			assertEquals(lines.get(i), adapter.getItem(i));
-		}
 		
 	}
 	
-	public void testRouteStopsLoader() {
+	public void testRouteStopsLoader() throws InterruptedException {
 		Route route = new Route("209","Random Name", 2);
 		CountDownLatch lock = new CountDownLatch(1);
 		routeStopsLoader.setCompletedAsyncTasksLatch(lock);
@@ -435,37 +480,12 @@ public void testMaintenanceNewsFromDrawerUI() throws InterruptedException {
 		LatLng point3 = new LatLng(41.6226288146378, -87.57545471191406);
 		String encodedPolyline = "kmo}F~yevOkrCoaXhsR`yA";
 		routeStopsLoader.addLineToMap(encodedPolyline);*/
->>>>>>> c4962c80effec6945d1f08c65cd5b2151d101c1f
+
 		
-		SelectMaintenanceNews myRunnable = new SelectMaintenanceNews();
 		
-	    synchronized(myRunnable)
-	    {
-	    	fragmentActivity.runOnUiThread(myRunnable);
-	    	myRunnable.wait(); 
-	    }
-	    
-	    mPos = menuList.getSelectedItemPosition();
-	    selectedString = (String) menuList.getItemAtPosition(mPos);
-	    
-	    ActionBar actionBar = (ActionBar) fragmentActivity.getActionBar();
-	    resultTitle = (String) actionBar.getTitle();
-	    
-	    Log.d("MPOS", mPos + "");
-	    Log.d("SELECTEDSTRING", selectedString);
-	    Log.d("TITLE", resultTitle);
-	    
-	    assertEquals(resultTitle, selectedString);
-	    	    
-	    if(mPos == 2)
-	    {
-	    	mnFragment = fragmentActivity.getMaintenanceNewsFragment();
-	    	assertNotNull(mnFragment);
-	    	testMaintenanceNews(mnFragment);
-	    }  
 	}
 
-	public void testMaintenanceNews(MaintenanceNewsFragment mnf) throws InterruptedException
+	public void testMaintenanceNews(MaintenanceNewsFragment mnf)
 	{   
 			View mnView = mnf.getView();
 			assertNotNull(mnView);

@@ -25,8 +25,8 @@ public class SkeletonClassesTest extends TestCase{
 		Stop stop = new Stop("00", "Description", "2", new LatLng(1,1));
 		assertEquals("00", stop.getId());
 		assertEquals("Description", stop.getDescription());
-		assertEquals("2", stop.getServiceType());
-		assertEquals(1, stop.getPosition().latitude);
+		assertEquals(2, stop.getServiceType());
+		assertEquals((Double)1.0, stop.getPosition().latitude);
 		
 		Route route = new Route("111", "Super Route", 2);
 		assertEquals("111", route.getCode());
