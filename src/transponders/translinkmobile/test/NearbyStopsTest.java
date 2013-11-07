@@ -339,45 +339,40 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	 */
 	public void testGocardLoginFragment() throws InterruptedException{
 		//force swap the fragment to display routes
-		fragmentActivity.runOnUiThread(
-	      new Runnable() {
-	        public void run() {
-	        	fragmentActivity.openGocardLoginFragment();
-	        }
-	      }
-	     );
+		OpenGocardLoginFragmentRunnable openGocardLoginFragmentRunnable = new OpenGocardLoginFragmentRunnable();
+		Log.d("TestCase", "1");
+	    synchronized(openGocardLoginFragmentRunnable)
+	    {
+	    	fragmentActivity.runOnUiThread(openGocardLoginFragmentRunnable);
+	    	openGocardLoginFragmentRunnable.wait(); 
+	    }
 		CountDownLatch lock = new CountDownLatch(1);
 		GocardLoginFragment gocardLoginFragment = (GocardLoginFragment) fragmentActivity.getContentFragment();
 		int count =0;
 		while (gocardLoginFragment == null) {
 			gocardLoginFragment = (GocardLoginFragment) fragmentActivity.getContentFragment();
-			if (++count == 70000) {
+			if (++count == 140000) {
 				fail("Activity content frame remained null");
 				return;
 			}
 		}
 		
 		//Make sure onCreateView is called
-		gocardLoginFragment.setCountDownLatch(lock);
-		lock.await(10000, TimeUnit.MILLISECONDS);
+		//gocardLoginFragment.setCountDownLatch(lock);
+		//lock.await(10000, TimeUnit.MILLISECONDS);
 		lock=new CountDownLatch(1);
 		gocardLoginFragment.setCountDownLatch(lock);
 		
 		//Test for invalid login
-		gocardLoginFragment.setGocardNumber("12345");
-		gocardLoginFragment.setPassword("badPass");
-		final GocardLoginFragment gocardLoginFragmentFinal = gocardLoginFragment;
-		fragmentActivity.runOnUiThread(
-			      new Runnable() {
-			        public void run() {
-			        		Button loginButton = (Button) gocardLoginFragmentFinal.getView().findViewById(R.id.login_button);
-			        			gocardLoginFragmentFinal.onClick(loginButton);
-			        }
-			      }
-			      );
+		GocardLoginFragmentSubmitButtonRunnable gocardLoginFragmentSubmitButtonRunnable = new GocardLoginFragmentSubmitButtonRunnable (gocardLoginFragment, "12345", "badPass");
+		Log.d("TestCase", "2");
+		synchronized(gocardLoginFragmentSubmitButtonRunnable) {
+			fragmentActivity.runOnUiThread(gocardLoginFragmentSubmitButtonRunnable);
+			gocardLoginFragmentSubmitButtonRunnable.wait();
+		}
 		lock.await(40000, TimeUnit.MILLISECONDS);
-		assertEquals(View.VISIBLE, gocardLoginFragmentFinal.getWrongPassWarning().getVisibility());
-		
+		assertEquals(View.VISIBLE, gocardLoginFragment.getWrongPassWarning().getVisibility());
+		Log.d("TestCase", "2-A");
 		//Check login details are added for testing
 	    BufferedReader br;
 	    String fileStr = "";
@@ -417,31 +412,33 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		lock = new CountDownLatch(1);
 		gocardLoginFragment.setCountDownLatch(lock);
 		
+		Log.d("TestCase", ""+args[0]+", "+args[1]);
 		//Test for valid login
-		final GocardLoginFragment gocardLoginFragmentFinal2 = gocardLoginFragment;
-		final String[] argsFinal = args;
-		fragmentActivity.runOnUiThread(
-			      new Runnable() {
-			        public void run() {
-			        	gocardLoginFragmentFinal2.setGocardNumber(argsFinal[0]);
-			    		gocardLoginFragmentFinal2.setPassword(argsFinal[1]);
-			        	Button loginButton = (Button) gocardLoginFragmentFinal.getView().findViewById(R.id.login_button);
-			gocardLoginFragmentFinal2.onClick(loginButton);
-			        }
-			      }
-			      );
+		gocardLoginFragmentSubmitButtonRunnable = new GocardLoginFragmentSubmitButtonRunnable (gocardLoginFragment, args[0], args[1]);
+		Log.d("TestCase", "3");
+		synchronized(gocardLoginFragmentSubmitButtonRunnable) {
+			fragmentActivity.runOnUiThread(gocardLoginFragmentSubmitButtonRunnable);
+			gocardLoginFragmentSubmitButtonRunnable.wait();
+		}
+		Log.d("TestCase", "3-A");
 		lock.await(40000, TimeUnit.MILLISECONDS);
-		assertEquals(View.INVISIBLE, gocardLoginFragmentFinal2.getWrongPassWarning().getVisibility());
+		Log.d("TestCase", "3-B");
+		assertEquals(View.INVISIBLE, gocardLoginFragment.getWrongPassWarning().getVisibility());
+		Log.d("TestCase", "3-C");
 		
-		GocardDisplayFragment gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
+		
 		count =0;
-		while (gocardDisplayFragment == null) {
-			gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
-			if (++count == 70000) {
-				fail("Activity content frame remained null");
+		Log.d("TestCase", "4");
+		while (fragmentActivity.getContentFragment().getClass() != GocardDisplayFragment.class) {
+			//gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
+			if (++count == 140000) {
+				fail("Fragment did not change to GocardDisplayFragment");
 				return;
 			}
 		}
+		Log.d("TestCase", "5");
+		GocardDisplayFragment gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
+		
 		lock = new CountDownLatch(1);
 		gocardDisplayFragment.setCountDownLatch(lock);
 		
@@ -674,6 +671,47 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 			}
 		   
 		}
+	}
+	
+	private class OpenGocardLoginFragmentRunnable implements Runnable {
+
+		@Override
+		public void run() {
+			
+			fragmentActivity.openGocardLoginFragment();
+			synchronized(this) {
+				this.notify();
+			}
+		}
+		
+	}
+	
+	private class GocardLoginFragmentSubmitButtonRunnable implements Runnable {
+
+		GocardLoginFragment gocardLoginFragment;
+		String goCardId;
+		String goCardPass;
+		public GocardLoginFragmentSubmitButtonRunnable(GocardLoginFragment fragment, String goCardId, String goCardPass) {
+			gocardLoginFragment = fragment;
+			this.goCardId = goCardId;
+			this.goCardPass = goCardPass;
+		}
+		
+		@Override
+		public void run() {
+			synchronized(this) {
+				gocardLoginFragment.setGocardNumber(goCardId);
+				gocardLoginFragment.setPassword(goCardPass);
+				Button loginButton = (Button) gocardLoginFragment.getView().findViewById(R.id.login_button);
+				loginButton.performClick();
+				//FragmentManager m = gocardLoginFragment.getFragmentManager();
+				//m.executePendingTransactions();
+				this.notify();
+			}
+			
+			
+		}
+		
 	}
 	
 	private class SubmitButtonRunnable implements Runnable
