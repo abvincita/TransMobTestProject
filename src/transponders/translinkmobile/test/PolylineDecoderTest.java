@@ -2,7 +2,7 @@ package transponders.translinkmobile.test;
 
 import java.util.List;
 
-import transponders.translinkmobile.PolylineDecoder;
+import transponders.transmob.PolylineDecoder;
 import junit.framework.TestCase;
 
 import com.google.android.gms.maps.model.LatLng;

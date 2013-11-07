@@ -5,7 +5,7 @@ import java.util.Calendar;
 import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 
-import transponders.translinkmobile.JourneyPlanner;
+import transponders.transmob.JourneyPlanner;
 
 public class JourneyPlannerTest extends AndroidTestCase
 {

@@ -5,9 +5,9 @@ import java.util.Date;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import transponders.translinkmobile.Route;
-import transponders.translinkmobile.Stop;
-import transponders.translinkmobile.StopRoute;
+import transponders.transmob.Route;
+import transponders.transmob.Stop;
+import transponders.transmob.StopRoute;
 import junit.framework.TestCase;
 
 public class SkeletonClassesTest extends TestCase{
@@ -28,12 +28,12 @@ public class SkeletonClassesTest extends TestCase{
 		assertEquals(2, stop.getServiceType());
 		assertEquals((Double)1.0, stop.getPosition().latitude);
 		
-		Route route = new Route("111", "Super Route", 2);
+		Route route = new Route("111", "Super Route", 2, 1);
 		assertEquals("111", route.getCode());
 		assertEquals("Super Route", route.getDescription());
 		assertEquals(2, route.getType());
 		
-		StopRoute stopRoute = new StopRoute(stop, route);
+		StopRoute stopRoute = new StopRoute();
 		Date date = new Date();
 		Date date2 = new Date(date.getTime() + 500);
 		stopRoute.addTime(date);

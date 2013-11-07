@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit;
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.AndroidTestCase;
 
-import transponders.translinkmobile.JSONRequest;
-import transponders.translinkmobile.Stop;
+import transponders.transmob.JSONRequest;
+import transponders.transmob.Stop;
 import junit.framework.TestCase;
 
 

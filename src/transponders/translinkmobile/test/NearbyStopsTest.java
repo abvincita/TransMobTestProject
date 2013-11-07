@@ -33,30 +33,19 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.os.AsyncTask;
 
-import transponders.translinkmobile.DisplayRoutesFragment;
-import transponders.translinkmobile.JSONRequest;
-import transponders.translinkmobile.JourneyPlanner;
-import transponders.translinkmobile.MaintenanceNewsFragment;
-import transponders.translinkmobile.MaintenanceNewsFragment.DownloadWebpageTask;
-import transponders.translinkmobile.NearbyStops;
-import transponders.translinkmobile.R;
-import transponders.translinkmobile.Route;
-import transponders.translinkmobile.ShowJourneyPage;
+import transponders.transmob.R;
 
-
-import transponders.translinkmobile.DisplayRoutesFragment;
-
-import transponders.translinkmobile.JourneyPlanner;
-import transponders.translinkmobile.MaintenanceNewsFragment;
-
-import transponders.translinkmobile.NearbyStops;
-import transponders.translinkmobile.R;
-import transponders.translinkmobile.Route;
-import transponders.translinkmobile.RouteDataLoader;
-import transponders.translinkmobile.RouteStopsLoader;
-
-import transponders.translinkmobile.Stop;
-import transponders.translinkmobile.StopDataLoader;
+import transponders.transmob.DisplayRoutesFragment;
+import transponders.transmob.JSONRequest;
+import transponders.transmob.JourneyPlanner;
+import transponders.transmob.MaintenanceNewsFragment;
+import transponders.transmob.NearbyStops;
+import transponders.transmob.Route;
+import transponders.transmob.RouteStopsLoader;
+import transponders.transmob.ShowJourneyPage;
+import transponders.transmob.Stop;
+import transponders.transmob.StopDataLoader;
+import transponders.transmob.MaintenanceNewsFragment.DownloadWebpageTask;
 
 public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStops> {
 
@@ -106,8 +95,8 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		setActivityInitialTouchMode(false);
 	
 		fragmentActivity = getActivity();
-		menuList = (ListView) fragmentActivity.findViewById(transponders.translinkmobile.R.id.left_drawer_ns);
-		navigationDrawer = (DrawerLayout) fragmentActivity.findViewById(transponders.translinkmobile.R.id.drawer_layout_ns);
+		menuList = (ListView) fragmentActivity.findViewById(transponders.transmob.R.id.left_drawer_ns);
+		navigationDrawer = (DrawerLayout) fragmentActivity.findViewById(transponders.transmob.R.id.drawer_layout_ns);
 		menuAdapter = menuList.getAdapter();
 		
 
@@ -254,10 +243,10 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	
 	public void testDisplayRoutesFragment() throws InterruptedException {
 		Stop stop1 = new Stop("002459","stop1 description", "2", new LatLng(0,0));
-		stop1.addRoute(new Route("203","testroute",2));
-		stop1.addRoute(new Route("204","testroute",2));
+		stop1.addRoute(new Route("203","testroute",2, 1));
+		stop1.addRoute(new Route("204","testroute",2, 1));
 		Stop stop2 = new Stop("000429","stop2 description", "2", new LatLng(0,0));
-		stop2.addRoute(new Route("379","testroute",2));
+		stop2.addRoute(new Route("379","testroute",2, 1));
 		ArrayList<Stop> savedStops = new ArrayList<Stop>();
 		savedStops.add(stop1);
 		savedStops.add(stop2);
@@ -267,7 +256,7 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		fragmentActivity.runOnUiThread(
 	      new Runnable() {
 	        public void run() {
-	        	fragmentActivity.openTimetableFragment();
+	        	fragmentActivity.openTimetableFragment("TITLE");
 	        }
 	      }
 	     );
@@ -287,7 +276,7 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 				fail("Activity content frame remained null");
 			}
 		}
-		displayRouteFragment.setCompletedAsyncTasksLatch(lock);
+		//displayRouteFragment.setCompletedAsyncTasksLatch(lock);
 		/*
 		count = 0;
 		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
@@ -307,31 +296,21 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		}*/
 		lock.await(10000, TimeUnit.MILLISECONDS);
 		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
-		RouteDataLoader routeDataLoader = displayRouteFragment.getRouteDataLoader();
-		List<String> lines = displayRouteFragment.getLines();
-		
-		//routeDataLoader.setCompletedAsyncTasksLatch(lock2);
-		//lock2.await(30000, TimeUnit.MILLISECONDS);
-		/*while(routeDataLoader.isLoading()) {
-			;
-		}*/
+		ArrayList<Route> routes = displayRouteFragment.getAvailableRoutes();
 
-		assertEquals(3, lines.size());
-		for(String str: lines) {
-			if (str.contains("203")) {
+		assertEquals(3, routes.size());
+
+		for(Route route : routes) {
+			if (route.getCode().equalsIgnoreCase("203")) {
 				found203=true;
-			} else if (str.contains("204")) {
+			} else if (route.getCode().equalsIgnoreCase("204")) {
 				found204=true;
-			} else if (str.contains("379")) {
+			} else if (route.getCode().equalsIgnoreCase("379")) {
 				found379=true;
 			}
 		}
 		if (!found203 || !found204 || !found379) {
 			fail("Could not find all required routes in the DisplayRoutesFragment");
-		}
-		int adapterSize = adapter.getCount();
-		for (int i=0; i<adapterSize; i++) {
-			assertEquals(lines.get(i), adapter.getItem(i));
 		}
 	}
 	
@@ -425,41 +404,38 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		}
 	}
 	
-public void testMaintenanceNewsFromDrawerUI() throws InterruptedException {
-	
-	SelectMaintenanceNews myRunnable = new SelectMaintenanceNews();
-	
-    synchronized(myRunnable)
-    {
-    	fragmentActivity.runOnUiThread(myRunnable);
-    	myRunnable.wait(); 
-    }
-    
-    mPos = menuList.getSelectedItemPosition();
-    selectedString = (String) menuList.getItemAtPosition(mPos);
-    
-    ActionBar actionBar = (ActionBar) fragmentActivity.getActionBar();
-    resultTitle = (String) actionBar.getTitle();
-    
-    Log.d("MPOS", mPos + "");
-    Log.d("SELECTEDSTRING", selectedString);
-    Log.d("TITLE", resultTitle);
-    
-    assertEquals(resultTitle, selectedString);
-    	    
-    if(mPos == 2)
-    {
-    	mnFragment = fragmentActivity.getMaintenanceNewsFragment();
-    	assertNotNull(mnFragment);
-    	testMaintenanceNews(mnFragment);
-    }  
-
+	public void testMaintenanceNewsFromDrawerUI() throws InterruptedException {
 		
+		SelectMaintenanceNews myRunnable = new SelectMaintenanceNews();
 		
+	    synchronized(myRunnable)
+	    {
+	    	fragmentActivity.runOnUiThread(myRunnable);
+	    	myRunnable.wait(); 
+	    }
+	    
+	    mPos = menuList.getSelectedItemPosition();
+	    selectedString = (String) menuList.getItemAtPosition(mPos);
+	    
+	    ActionBar actionBar = (ActionBar) fragmentActivity.getActionBar();
+	    resultTitle = (String) actionBar.getTitle();
+	    
+	    Log.d("MPOS", mPos + "");
+	    Log.d("SELECTEDSTRING", selectedString);
+	    Log.d("TITLE", resultTitle);
+	    
+	    assertEquals(resultTitle, selectedString);
+	    	    
+	    if(mPos == 2)
+	    {
+	    	mnFragment = fragmentActivity.getMaintenanceNewsFragment();
+	    	assertNotNull(mnFragment);
+	    	testMaintenanceNews(mnFragment);
+	    }  
 	}
 	
 	public void testRouteStopsLoader() throws InterruptedException {
-		Route route = new Route("209","Random Name", 2);
+		Route route = new Route("209","Random Name", 2, 1);
 		CountDownLatch lock = new CountDownLatch(1);
 		routeStopsLoader.setCompletedAsyncTasksLatch(lock);
 		routeStopsLoader.requestRouteStops(route);
