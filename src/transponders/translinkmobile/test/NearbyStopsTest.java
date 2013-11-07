@@ -1,5 +1,9 @@
 package transponders.translinkmobile.test;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +40,8 @@ import android.os.AsyncTask;
 import transponders.transmob.R;
 
 import transponders.transmob.DisplayRoutesFragment;
+import transponders.transmob.GocardDisplayFragment;
+import transponders.transmob.GocardLoginFragment;
 import transponders.transmob.JSONRequest;
 import transponders.transmob.JourneyPlanner;
 import transponders.transmob.MaintenanceNewsFragment;
@@ -312,6 +318,101 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		if (!found203 || !found204 || !found379) {
 			fail("Could not find all required routes in the DisplayRoutesFragment");
 		}
+	}
+	
+	/**
+	 * check the login fragment for GoCards.
+	 * Requires a file called 'login.txt' in assets folder, with a single line: <gocardnumber> <password>
+	 * @throws InterruptedException
+	 */
+	public void testGocardLoginFragment() throws InterruptedException{
+		//force swap the fragment to display routes
+		fragmentActivity.runOnUiThread(
+	      new Runnable() {
+	        public void run() {
+	        	fragmentActivity.openGocardLoginFragment();
+	        }
+	      }
+	     );
+		CountDownLatch lock = new CountDownLatch(1);
+		GocardLoginFragment gocardLoginFragment = (GocardLoginFragment) fragmentActivity.getContentFragment();
+		int count =0;
+		while (gocardLoginFragment == null) {
+			gocardLoginFragment = (GocardLoginFragment) fragmentActivity.getContentFragment();
+			if (++count == 70000) {
+				fail("Activity content frame remained null");
+				return;
+			}
+		}
+		gocardLoginFragment.setCountDownLatch(lock);
+		
+		//Test for invalid login
+		gocardLoginFragment.setGocardNumber("12345");
+		gocardLoginFragment.setPassword("badPass");
+		Button loginButton = (Button) gocardLoginFragment.getView().findViewById(R.id.login_button);
+		gocardLoginFragment.onClick(loginButton);
+		lock.await(40000, TimeUnit.MILLISECONDS);
+		assertEquals(View.VISIBLE, gocardLoginFragment.getWrongPassWarning().getVisibility());
+		
+		//Check login details are added for testing
+	    BufferedReader br;
+	    String fileStr = "";
+		try {
+			br = new BufferedReader(new FileReader("assets/login.txt"));
+		
+	        StringBuilder sb = new StringBuilder();
+	        String line;
+			
+				line = br.readLine();
+			
+
+	        while (line != null) {
+	            sb.append(line);
+	            sb.append('\n');
+	            line = br.readLine();
+	        }
+	        fileStr = sb.toString();
+	        br.close();
+		} catch (Exception e) {
+			fail("Could not read 'login.txt'. Ensure it is located at assets/login.txt");
+			return;
+		}
+		String[] args = fileStr.split(" ");
+		if (args.length != 2) {
+			fail("Error in 'assets/login.txt'. Ensure it is a single line: <gocardnumber> <password>");
+			return;
+		}
+		
+		
+		lock = new CountDownLatch(1);
+		gocardLoginFragment.setCountDownLatch(lock);
+		
+		//Test for valid login
+		gocardLoginFragment.setGocardNumber(args[0]);
+		gocardLoginFragment.setPassword(args[1]);
+		gocardLoginFragment.onClick(loginButton);
+		lock.await(40000, TimeUnit.MILLISECONDS);
+		assertEquals(View.INVISIBLE, gocardLoginFragment.getWrongPassWarning().getVisibility());
+		
+		GocardDisplayFragment gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
+		count =0;
+		while (gocardDisplayFragment == null) {
+			gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
+			if (++count == 70000) {
+				fail("Activity content frame remained null");
+				return;
+			}
+		}
+		lock = new CountDownLatch(1);
+		gocardDisplayFragment.setCountDownLatch(lock);
+		
+		lock.await(40000, TimeUnit.MILLISECONDS);
+		TableLayout balanceTable = gocardDisplayFragment.getBalanceTable();
+		TableLayout historyTable = gocardDisplayFragment.getHistoryTable();
+		
+		assertEquals(true, (balanceTable.getChildCount() > 0));
+		assertEquals(true, (historyTable.getChildCount() > 0));
+		
 	}
 	
 	public void testJourneyPlannerResult(JourneyPlanner jpf) throws InterruptedException

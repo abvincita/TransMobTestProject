@@ -6,6 +6,7 @@
 .project
 .metadata
 bin/
+gen/
 tmp/
 *.tmp
 *.bak
@@ -18,6 +19,7 @@ classes.dex
 resources.ap_
 TransmobTest.apk
 local.properties
+assets/login.txt
 
 # External tool builders
 .externalToolBuilders/
