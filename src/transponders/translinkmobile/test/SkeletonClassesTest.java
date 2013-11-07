@@ -7,7 +7,8 @@ import com.google.android.gms.maps.model.LatLng;
 
 import transponders.transmob.Route;
 import transponders.transmob.Stop;
-import transponders.transmob.StopRoute;
+import transponders.transmob.StopTrip;
+import transponders.transmob.Trip;
 import junit.framework.TestCase;
 
 public class SkeletonClassesTest extends TestCase{
@@ -21,7 +22,7 @@ public class SkeletonClassesTest extends TestCase{
 		
 	}
 	
-	public void testStopAndRouteAndStopRoute() {
+	public void testStopAndRouteAndStopTrip() {
 		Stop stop = new Stop("00", "Description", "2", new LatLng(1,1));
 		assertEquals("00", stop.getId());
 		assertEquals("Description", stop.getDescription());
@@ -33,15 +34,16 @@ public class SkeletonClassesTest extends TestCase{
 		assertEquals("Super Route", route.getDescription());
 		assertEquals(2, route.getType());
 		
-		StopRoute stopRoute = new StopRoute();
+		Trip trip = new Trip ("tripID", route);
+		
+		StopTrip stopTrip = new StopTrip(stop, trip);
 		Date date = new Date();
 		Date date2 = new Date(date.getTime() + 500);
-		stopRoute.addTime(date);
-		stopRoute.addTime(date2);
-		ArrayList<Date> times = stopRoute.getTimes();
+		stopTrip.setTime(date);
 		
-		assertEquals(date.getTime(), times.get(0).getTime()); 
-		assertEquals(date2.getTime(), times.get(1).getTime());
+		
+		assertEquals(date.getTime(), stopTrip.getTime().getTime()); 
+		
 				
 	}
 }

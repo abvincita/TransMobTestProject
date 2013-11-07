@@ -1,9 +1,11 @@
 package transponders.translinkmobile.test;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +54,7 @@ import transponders.transmob.ShowJourneyPage;
 import transponders.transmob.Stop;
 import transponders.transmob.StopDataLoader;
 import transponders.transmob.MaintenanceNewsFragment.DownloadWebpageTask;
+import transponders.transmob.Trip;
 
 public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStops> {
 
@@ -248,11 +251,11 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	}
 	
 	public void testDisplayRoutesFragment() throws InterruptedException {
-		Stop stop1 = new Stop("002459","stop1 description", "2", new LatLng(0,0));
-		stop1.addRoute(new Route("203","testroute",2, 1));
-		stop1.addRoute(new Route("204","testroute",2, 1));
-		Stop stop2 = new Stop("000429","stop2 description", "2", new LatLng(0,0));
-		stop2.addRoute(new Route("379","testroute",2, 1));
+		Stop stop1 = new Stop("002459","stop1 description", "8", new LatLng(0,0));
+		stop1.addRoute(new Route("203","testroute",8, 1));
+		stop1.addRoute(new Route("204","testroute",8, 1));
+		Stop stop2 = new Stop("000429","stop2 description", "8", new LatLng(0,0));
+		stop2.addRoute(new Route("379","testroute",8, 1));
 		ArrayList<Stop> savedStops = new ArrayList<Stop>();
 		savedStops.add(stop1);
 		savedStops.add(stop2);
@@ -271,7 +274,7 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		boolean found204 = false;
 		boolean found379 = false;
 		CountDownLatch lock = new CountDownLatch(1);
-		CountDownLatch lock2 = new CountDownLatch(1);
+		
 		
 		DisplayRoutesFragment displayRouteFragment = (DisplayRoutesFragment) fragmentActivity.getContentFragment();
 		int count =0;
@@ -300,13 +303,16 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 				fail("routeDataLoaderS remained null");
 			}
 		}*/
-		lock.await(10000, TimeUnit.MILLISECONDS);
-		ArrayAdapter<String> adapter = displayRouteFragment.getAdapter();
-		ArrayList<Route> routes = displayRouteFragment.getAvailableRoutes();
+		displayRouteFragment.setCountDownLatch(lock);
+		lock.await(50000, TimeUnit.MILLISECONDS);
+		ArrayList<Trip> firstTrips = displayRouteFragment.getFirstTrips();
+		//ArrayList<Route> routes = displayRouteFragment.getAvailableRoutes();
 
-		assertEquals(3, routes.size());
+		
 
-		for(Route route : routes) {
+		for(Trip trip : firstTrips) {
+			Route route = trip.getRoute();
+			Log.d("TestCase", route.getCode());
 			if (route.getCode().equalsIgnoreCase("203")) {
 				found203=true;
 			} else if (route.getCode().equalsIgnoreCase("204")) {
@@ -315,14 +321,20 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 				found379=true;
 			}
 		}
-		if (!found203 || !found204 || !found379) {
-			fail("Could not find all required routes in the DisplayRoutesFragment");
+		if (!found203) {
+			fail("Could not find route 203 in the DisplayRoutesFragment");
+		} else if (!found204) {
+			fail("Could not find route 204 in the DisplayRoutesFragment");
+		} else if (!found379) {
+			fail("Could not find route 379 in the DisplayRoutesFragment");
 		}
+		
+		assertEquals(3, firstTrips.size());
 	}
 	
 	/**
 	 * check the login fragment for GoCards.
-	 * Requires a file called 'login.txt' in assets folder, with a single line: <gocardnumber> <password>
+	 * Requires a file called 'login.txt' in working directory folder, with a single line: <gocardnumber> <password>
 	 * @throws InterruptedException
 	 */
 	public void testGocardLoginFragment() throws InterruptedException{
@@ -344,21 +356,35 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 				return;
 			}
 		}
+		
+		//Make sure onCreateView is called
+		gocardLoginFragment.setCountDownLatch(lock);
+		lock.await(10000, TimeUnit.MILLISECONDS);
+		lock=new CountDownLatch(1);
 		gocardLoginFragment.setCountDownLatch(lock);
 		
 		//Test for invalid login
 		gocardLoginFragment.setGocardNumber("12345");
 		gocardLoginFragment.setPassword("badPass");
-		Button loginButton = (Button) gocardLoginFragment.getView().findViewById(R.id.login_button);
-		gocardLoginFragment.onClick(loginButton);
+		final GocardLoginFragment gocardLoginFragmentFinal = gocardLoginFragment;
+		fragmentActivity.runOnUiThread(
+			      new Runnable() {
+			        public void run() {
+			        		Button loginButton = (Button) gocardLoginFragmentFinal.getView().findViewById(R.id.login_button);
+			        			gocardLoginFragmentFinal.onClick(loginButton);
+			        }
+			      }
+			      );
 		lock.await(40000, TimeUnit.MILLISECONDS);
-		assertEquals(View.VISIBLE, gocardLoginFragment.getWrongPassWarning().getVisibility());
+		assertEquals(View.VISIBLE, gocardLoginFragmentFinal.getWrongPassWarning().getVisibility());
 		
 		//Check login details are added for testing
 	    BufferedReader br;
 	    String fileStr = "";
 		try {
-			br = new BufferedReader(new FileReader("assets/login.txt"));
+			Log.d("TestCase", "Absolute file path is " + new File(".").getAbsolutePath());
+			Log.d("TestCase", "Context path is "+ getInstrumentation().getContext().getFilesDir());
+			br = new BufferedReader(new InputStreamReader(getInstrumentation().getContext().getResources().getAssets().open("login.txt")));
 		
 	        StringBuilder sb = new StringBuilder();
 	        String line;
@@ -373,8 +399,12 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	        }
 	        fileStr = sb.toString();
 	        br.close();
-		} catch (Exception e) {
-			fail("Could not read 'login.txt'. Ensure it is located at assets/login.txt");
+		} catch (FileNotFoundException e) {
+			fail("Could not read 'login.txt'. Ensure it is located in working directory folder");
+			return;
+		} catch (IOException e) {
+			fail("IOError on assets/login.txt");
+			e.printStackTrace();
 			return;
 		}
 		String[] args = fileStr.split(" ");
@@ -388,11 +418,20 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 		gocardLoginFragment.setCountDownLatch(lock);
 		
 		//Test for valid login
-		gocardLoginFragment.setGocardNumber(args[0]);
-		gocardLoginFragment.setPassword(args[1]);
-		gocardLoginFragment.onClick(loginButton);
+		final GocardLoginFragment gocardLoginFragmentFinal2 = gocardLoginFragment;
+		final String[] argsFinal = args;
+		fragmentActivity.runOnUiThread(
+			      new Runnable() {
+			        public void run() {
+			        	gocardLoginFragmentFinal2.setGocardNumber(argsFinal[0]);
+			    		gocardLoginFragmentFinal2.setPassword(argsFinal[1]);
+			        	Button loginButton = (Button) gocardLoginFragmentFinal.getView().findViewById(R.id.login_button);
+			gocardLoginFragmentFinal2.onClick(loginButton);
+			        }
+			      }
+			      );
 		lock.await(40000, TimeUnit.MILLISECONDS);
-		assertEquals(View.INVISIBLE, gocardLoginFragment.getWrongPassWarning().getVisibility());
+		assertEquals(View.INVISIBLE, gocardLoginFragmentFinal2.getWrongPassWarning().getVisibility());
 		
 		GocardDisplayFragment gocardDisplayFragment = (GocardDisplayFragment) fragmentActivity.getContentFragment();
 		count =0;
@@ -457,8 +496,8 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 			List<String> resolvedParameters = jpf.getResolvedParameters();
 			assertNotNull(resolvedParameters);
 			
-			assertEquals(resolvedParameters.get(0), oriResolved);
-			assertEquals(resolvedParameters.get(1), destResolved);		    
+			assertEquals(oriResolved, resolvedParameters.get(0));
+			assertEquals(destResolved, resolvedParameters.get(1));		    
 		    
 		    Log.d("BUTTON ONCLICK", "before getShowJPFragment");
     	    showJPFragment = jpFragment.getShowJourneyPageFragment();
@@ -536,6 +575,13 @@ public class NearbyStopsTest extends ActivityInstrumentationTestCase2<NearbyStop
 	}
 	
 	public void testRouteStopsLoader() throws InterruptedException {
+		
+		//Test the trip version
+		
+		//Trip trip = new Trip ()
+		
+		//Get the route version
+		
 		Route route = new Route("209","Random Name", 2, 1);
 		CountDownLatch lock = new CountDownLatch(1);
 		routeStopsLoader.setCompletedAsyncTasksLatch(lock);
